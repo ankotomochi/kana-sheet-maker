@@ -230,7 +230,8 @@ function render() {
   if (!style) { style = document.createElement("style"); style.id = "pageStyle"; document.head.appendChild(style); }
   // Browsers (Safari in particular) often ignore @page size, so scale each sheet to fit
   // inside both A4 and Letter, whichever paper the print dialog ends up using.
-  const fit = Math.min(200 / P.w, 265 / P.h);
+  // 180x225 mm survives up to 0.75in printer margins on both papers in WebKit (Safari) and Chrome.
+  const fit = Math.min(180 / P.w, 225 / P.h);
   style.textContent = `@media print{@page{size:${P.css};margin:0}` +
     `.sheet svg{width:${(P.w * fit).toFixed(1)}mm;height:${(P.h * fit).toFixed(1)}mm}}`;
 }
