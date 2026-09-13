@@ -1,4 +1,15 @@
-<title>Kana Sheet Maker</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Free printable hiragana and katakana writing practice sheets with numbered stroke order, grey trace copies and a cross guide. A4 or US Letter, print or save as PDF.">
+<meta property="og:title" content="Kana Sheet Maker - free hiragana & katakana practice sheets">
+<meta property="og:description" content="Numbered stroke order, trace copies and cross guides. Print or save as PDF.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ankotomochi.github.io/kana-sheet-maker/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23c24e48'/%3E%3Ctext x='50' y='72' font-size='64' text-anchor='middle' fill='white' font-family='serif'%3E%E3%81%82%3C/text%3E%3C/svg%3E">
+<title>Kana Sheet Maker · Free Hiragana & Katakana Practice Sheets</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -42,6 +53,8 @@ textarea{width:100%;min-height:92px;resize:vertical;font-family:var(--jp);font-s
 .row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px}
 .seg{display:inline-grid;grid-auto-flow:column;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
 .seg button{border:0;background:transparent;color:var(--ink);padding:5px 11px;font:inherit;font-size:13px;cursor:pointer}
+.seg.script{align-self:flex-start}
+.seg.script button{font-family:var(--jp);font-size:15px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
 input[type=range]{width:100%;accent-color:var(--shu)}
 .val{font-family:var(--mono);font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums;min-width:5ch;text-align:right}
@@ -66,6 +79,8 @@ main{padding:32px;overflow:auto;display:flex;flex-direction:column;align-items:c
 }
 </style>
 
+</head>
+<body>
 <div class="app">
   <aside>
     <div class="brand"><span class="mark" aria-hidden="true">あ</span><h1>Kana Sheet Maker</h1></div>
@@ -74,6 +89,10 @@ main{padding:32px;overflow:auto;display:flex;flex-direction:column;align-items:c
     <fieldset>
       <legend>Characters</legend>
       <textarea id="text" spellcheck="false" aria-label="Characters to practise">あいうえお</textarea>
+      <div class="seg script" role="group" aria-label="Script">
+        <button type="button" data-script="hiragana" aria-pressed="true">ひらがな</button>
+        <button type="button" data-script="katakana" aria-pressed="false">カタカナ</button>
+      </div>
       <div class="presets" id="presets" aria-label="Load a row"></div>
     </fieldset>
 
@@ -110,28 +129,39 @@ const PAPER = { a4:{w:210,h:297,label:"A4",css:"A4"}, letter:{w:215.9,h:279.4,la
 const ROWS = [
   ["あいうえお","a"],["かきくけこ","ka"],["さしすせそ","sa"],["たちつてと","ta"],["なにぬねの","na"],
   ["はひふへほ","ha"],["まみむめも","ma"],["やゆよ","ya"],["らりるれろ","ra"],["わをん","wa"],
-  ["アイウエオ","a"],["カキクケコ","ka"],["サシスセソ","sa"]
+  ["がぎぐげご","ga"],["ざじずぜぞ","za"],["だぢづでど","da"],["ばびぶべぼ","ba"],["ぱぴぷぺぽ","pa"]
 ];
+const isHira = c => { const n = c.charCodeAt(0); return n >= 0x3041 && n <= 0x3096; };
+const isKata = c => { const n = c.charCodeAt(0); return n >= 0x30A1 && n <= 0x30F6; };
+const toKata = s => [...s].map(c => isHira(c) ? String.fromCharCode(c.charCodeAt(0) + 96) : c).join("");
+const toHira = s => [...s].map(c => isKata(c) ? String.fromCharCode(c.charCodeAt(0) - 96) : c).join("");
 const ROMAJI = {};
 (() => {
   const h = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
   const r = "a i u e o ka ki ku ke ko sa shi su se so ta chi tsu te to na ni nu ne no ha hi fu he ho ma mi mu me mo ya yu yo ra ri ru re ro wa wo n".split(" ");
   const d = {"が":"ga","ぎ":"gi","ぐ":"gu","げ":"ge","ご":"go","ざ":"za","じ":"ji","ず":"zu","ぜ":"ze","ぞ":"zo","だ":"da","ぢ":"ji","づ":"zu","で":"de","ど":"do","ば":"ba","び":"bi","ぶ":"bu","べ":"be","ぼ":"bo","ぱ":"pa","ぴ":"pi","ぷ":"pu","ぺ":"pe","ぽ":"po"};
-  const toKata = c => String.fromCharCode(c.charCodeAt(0) + 96);   // hiragana -> katakana block
   [...h].forEach((c, i) => { ROMAJI[c] = r[i]; ROMAJI[toKata(c)] = r[i]; });
   for (const [c, v] of Object.entries(d)) { ROMAJI[c] = v; ROMAJI[toKata(c)] = v; }
 })();
 
-const state = { paper:"a4", size:20, traces:3, cross:true, romaji:true, stroke:true };
+const state = { paper:"a4", size:20, traces:3, cross:true, romaji:true, stroke:true, script:"hiragana" };
 const $ = id => document.getElementById(id);
 
-ROWS.forEach(([chars, label]) => {
-  const b = document.createElement("button");
-  b.type = "button"; b.className = "chip"; b.title = `Load ${chars}`;
-  b.innerHTML = `${chars[0]}<small>${label}</small>`;
-  b.addEventListener("click", () => { $("text").value = chars; render(); });
-  $("presets").appendChild(b);
-});
+function renderPresets() {
+  const conv = state.script === "katakana" ? toKata : (s => s);
+  const chip = (chars, face, label, title) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.title = title;
+    b.innerHTML = `${face}<small>${label}</small>`;
+    b.addEventListener("click", () => { $("text").value = chars; render(); });
+    return b;
+  };
+  const basic = conv(ROWS.slice(0, 10).map(r => r[0]).join(""));
+  const box = $("presets"); box.replaceChildren();
+  box.appendChild(chip(basic, conv("あ") + "–" + conv("ん"), "all 46", `Load all 46 basic ${state.script}`));
+  ROWS.forEach(([chars, label]) => { const c = conv(chars); box.appendChild(chip(c, c[0], label, `Load ${c}`)); });
+}
+renderPresets();
 
 const NS = "http://www.w3.org/2000/svg";
 const el = (n, a = {}, t) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (t != null) e.textContent = t; return e; };
@@ -211,7 +241,16 @@ document.querySelectorAll("[data-paper]").forEach(b => b.addEventListener("click
   document.querySelectorAll("[data-paper]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
   render();
 }));
+document.querySelectorAll("[data-script]").forEach(b => b.addEventListener("click", () => {
+  state.script = b.dataset.script;
+  document.querySelectorAll("[data-script]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+  $("text").value = (state.script === "katakana" ? toKata : toHira)($("text").value);
+  renderPresets(); render();
+}));
 $("printBtn").addEventListener("click", () => window.print());
 render();
 if (document.fonts) document.fonts.ready.then(render);
 </script>
+
+</body>
+</html>
